@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sơ Đồ Mạch Robot Mini STEM</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 30px;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #2d3748;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #718096;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        
+        .btn-power { background: #48bb78; color: white; }
+        .btn-zoom-in { background: #4299e1; color: white; }
+        .btn-zoom-out { background: #ed8936; color: white; }
+        .btn-reset { background: #718096; color: white; }
+        
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            height: 800px;
+            border: 3px solid #e2e8f0;
+            border-radius: 12px;
+            overflow: auto;
+            background: #f7fafc;
+            background-image: 
+                linear-gradient(#e2e8f0 1px, transparent 1px),
+                linear-gradient(90deg, #e2e8f0 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        
+        #canvas {
+            display: block;
+            margin: 50px auto;
+            cursor: move;
+        }
+        
+        .legend {
+            margin-top: 25px;
+            padding: 20px;
+            background: #edf2f7;
+            border-radius: 10px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            background: white;
+            border-radius: 6px;
+        }
+        
+        .legend-color {
+            width: 30px;
+            height: 30px;
+            border-radius: 5px;
+            border: 2px solid #2d3748;
+        }
+        
+        .info-box {
+            margin-top: 20px;
+            padding: 20px;
+            background: #fff5f5;
+            border-left: 4px solid #f56565;
+            border-radius: 8px;
+        }
+        
+        .info-box h3 {
+            color: #c53030;
+            margin-bottom: 10px;
+        }
+        
+        .info-box ul {
+            margin-left: 20px;
+            color: #2d3748;
+        }
+        
+        .info-box li {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Sơ Đồ Mạch Điện Robot Mini</h1>
+        <p class="subtitle">Dự Án STEM - Arduino Nano | Có thể kéo thả & zoom</p>
+        
+        <div class="controls">
+            <button class="btn btn-power" onclick="togglePower()">⚡ Bật/Tắt Nguồn</button>
+            <button class="btn btn-zoom-in" onclick="zoom(1.2)">🔍 Phóng To</button>
+            <button class="btn btn-zoom-out" onclick="zoom(0.8)">🔎 Thu Nhỏ</button>
+            <button class="btn btn-reset" onclick="resetView()">🔄 Đặt Lại</button>
+        </div>
+        
+        <div class="canvas-container">
+            <canvas id="canvas" width="1200" height="900"></canvas>
+        </div>
+        
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background: #e53e3e;"></div>
+                <span><strong>Dây Đỏ:</strong> Nguồn + (VCC)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #2d3748;"></div>
+                <span><strong>Dây Đen:</strong> Đất (GND)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #4299e1;"></div>
+                <span><strong>Dây Xanh:</strong> Tín hiệu Digital</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #48bb78;"></div>
+                <span><strong>Dây Xanh Lá:</strong> I2C (SDA/SCL)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #ed8936;"></div>
+                <span><strong>Dây Cam:</strong> PWM Motor</span>
+            </div>
+        </div>
+        
+        <div class="info-box">
+            <h3>⚠️ Lưu Ý Quan Trọng:</h3>
+            <ul>
+                <li><strong>Tụ 1000µF:</strong> Chân dài (+) nối 5V, chân ngắn (-) nối GND</li>
+                <li><strong>Tụ 104:</strong> Gắn gần VCC của Arduino, Servo, HC-SR04</li>
+                <li><strong>Pin Li-ion:</strong> Nối tiếp 2 viên = 7.4V, qua công tắc</li>
+                <li><strong>LM2596S:</strong> Điều chỉnh đầu ra = 5V chính xác</li>
+                <li><strong>Servo:</strong> PHẢI có tụ 104, không sẽ gây nhiễu</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let scale = 1;
+        let powerOn = true;
+        let isDragging = false;
+        let startX, startY;
+        let translateX = 0;
+        let translateY = 0;
+        
+        // Màu sắc
+        const colors = {
+            red: '#e53e3e',
+            black: '#2d3748',
+            blue: '#4299e1',
+            green: '#48bb78',
+            orange: '#ed8936',
+            yellow: '#ecc94b',
+            purple: '#9f7aea',
+            bg: '#ffffff',
+            border: '#a0aec0'
+        };
+        
+        // Vẽ linh kiện hình chữ nhật
+        function drawComponent(x, y, w, h, label, color, subtext = '') {
+            ctx.fillStyle = color;
+            ctx.fillRect(x, y, w, h);
+            ctx.strokeStyle = colors.border;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x, y, w, h);
+            
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(label, x + w/2, y + h/2);
+            
+            if(subtext) {
+                ctx.font = '11px Arial';
+                ctx.fillText(subtext, x + w/2, y + h/2 + 15);
+            }
+        }
+        
+        // Vẽ dây nối
+        function drawWire(x1, y1, x2, y2, color, label = '') {
+            ctx.strokeStyle = powerOn ? color : '#cbd5e0';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+            
+            if(label) {
+                ctx.fillStyle = '#2d3748';
+                ctx.font = 'bold 11px Arial';
+                ctx.textAlign = 'center';
+                const midX = (x1 + x2) / 2;
+                const midY = (y1 + y2) / 2;
+                ctx.fillText(label, midX, midY - 5);
+            }
+        }
+        
+        // Vẽ tụ điện
+        function drawCapacitor(x, y, label, isElectrolytic = false) {
+            if(isElectrolytic) {
+                // Tụ hóa 1000µF (hình trụ)
+                ctx.fillStyle = '#4a5568';
+                ctx.fillRect(x - 10, y - 25, 20, 50);
+                ctx.fillStyle = colors.red;
+                ctx.fillRect(x - 10, y - 25, 20, 5);
+                
+                // Dấu +
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 16px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('+', x, y - 15);
+            } else {
+                // Tụ 104 (hình vuông nhỏ)
+                ctx.fillStyle = '#d69e2e';
+                ctx.fillRect(x - 8, y - 8, 16, 16);
+                ctx.strokeStyle = colors.border;
+                ctx.lineWidth = 1;
+                ctx.strokeRect(x - 8, y - 8, 16, 16);
+            }
+            
+            ctx.fillStyle = '#2d3748';
+            ctx.font = 'bold 10px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(label, x, y + 20);
+        }
+        
+        // Vẽ pin
+        function drawBattery(x, y) {
+            // Thân pin
+            ctx.fillStyle = '#38b2ac';
+            ctx.fillRect(x, y, 40, 70);
+            ctx.strokeStyle = colors.border;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x, y, 40, 70);
+            
+            // Cực dương
+            ctx.fillStyle = colors.red;
+            ctx.fillRect(x + 12, y - 8, 16, 8);
+            
+            // Ký hiệu
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Li-ion', x + 20, y + 35);
+            ctx.fillText('3.7V', x + 20, y + 50);
+        }
+        
+        // Vẽ công tắc
+        function drawSwitch(x, y) {
+            ctx.fillStyle = '#4a5568';
+            ctx.fillRect(x, y, 50, 30);
+            ctx.strokeStyle = colors.border;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x, y, 50, 30);
+            
+            // Công tắc
+            ctx.strokeStyle = powerOn ? colors.green : colors.red;
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(x + 10, y + 15);
+            ctx.lineTo(powerOn ? x + 40 : x + 25, y + 15);
+            ctx.stroke();
+            
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 10px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(powerOn ? 'ON' : 'OFF', x + 25, y + 45);
+        }
+        
+        // Vẽ toàn bộ sơ đồ
+        function drawCircuit() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.save();
+            ctx.scale(scale, scale);
+            
+            // === PHẦN NGUỒN ===
+            // Pin 1
+            drawBattery(50, 50);
+            ctx.fillStyle = '#2d3748';
+            ctx.font = 'bold 12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Pin 1', 70, 135);
+            
+            // Pin 2
+            drawBattery(50, 160);
+            ctx.fillText('Pin 2', 70, 245);
+            
+            // Dây nối tiếp pin
+            drawWire(70, 120, 70, 160, colors.red, 'Nối tiếp');
+            
+            // Công tắc
+            drawSwitch(120, 80);
+            ctx.fillText('Công tắc', 145, 125);
+            
+            // Dây từ pin đến công tắc
+            drawWire(90, 85, 120, 95, colors.red);
+            
+            // LM2596S Buck Converter
+            drawComponent(220, 50, 100, 80, 'LM2596S', '#805ad5', 'Buck 5V');
+            ctx.fillStyle = '#2d3748';
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText('IN+', 225, 65);
+            ctx.fillText('IN-', 225, 120);
+            ctx.fillText('OUT+', 290, 65);
+            ctx.fillText('OUT-', 290, 120);
+            
+            // Dây từ công tắc đến LM2596S
+            drawWire(170, 95, 220, 70, colors.red, '7.4V');
+            drawWire(70, 230, 220, 110, colors.black, 'GND');
+            
+            // Tụ 1000µF
+            drawCapacitor(370, 90, '1000µF', true);
+            
+            // Dây từ LM2596S ra (5V)
+            drawWire(320, 70, 370, 70, colors.red, '5V');
+            drawWire(320, 110, 370, 110, colors.black, 'GND');
+            
+            // === ARDUINO NANO ===
+            drawComponent(430, 40, 120, 100, 'Arduino', '#3182ce', 'Nano');
+            
+            // Các chân Arduino
+            ctx.fillStyle = '#2d3748';
+            ctx.font = '9px Arial';
+            ctx.textAlign = 'right';
+            ctx.fillText('5V', 545, 60);
+            ctx.fillText('GND', 545, 75);
+            ctx.fillText('D2', 545, 90);
+            ctx.fillText('D3', 545, 105);
+            ctx.fillText('D4', 545, 120);
+            ctx.fillText('D5', 435, 60);
+            ctx.fillText('D6', 435, 75);
+            ctx.fillText('D9', 435, 90);
+            ctx.fillText('A4', 435, 105);
+            ctx.fillText('A5', 435, 120);
+            
+            // Tụ 104 cho Arduino
+            drawCapacitor(580, 80, '104');
+            
+            // Dây cấp nguồn Arduino
+            drawWire(370, 70, 550, 55, colors.red, '5V');
+            drawWire(370, 110, 550, 70, colors.black, 'GND');
+            
+            // === HC-SR04 ===
+            drawComponent(600, 200, 100, 70, 'HC-SR04', '#38b2ac', 'Siêu âm');
+            ctx.fillStyle = '#2d3748';
+            ctx.font = '9px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText('VCC', 605, 215);
+            ctx.fillText('TRIG', 605, 230);
+            ctx.fillText('ECHO', 605, 245);
+            ctx.fillText('GND', 605, 260);
+            
+            // Tụ 104 cho HC-SR04
+            drawCapacitor(730, 235, '104');
+            
+            // Dây HC-SR04 đến Arduino
+            drawWire(550, 55, 620, 210, colors.red);
+            drawWire(550, 85, 620, 255, colors.black);
+            drawWire(550, 90, 620, 225, colors.blue, 'D2');
+            drawWire(550, 105, 620, 240, colors.blue, 'D3');
+            
+            // === SERVO SG90 ===
+            drawComponent(600, 320, 90, 60, 'Servo', '#ed8936', 'SG90');
+            ctx.fillStyle = 'white';
+            ctx.font = '9px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText('Cam', 605, 335);
+            ctx.fillText('Đỏ', 605, 350);
+            ctx.fillText('Nâu', 605, 365);
+            
+            // Tụ 104 cho Servo
+            drawCapacitor(730, 350, '104');
+            
+            // Dây Servo đến Arduino
+            drawWire(430, 90, 620, 330, colors.orange, 'D9');
+            drawWire(550, 55, 620, 345, colors.red);
+            drawWire(550, 70, 620, 360, colors.black);
+            
+            // === OLED Display ===
+            drawComponent(430, 200, 100, 70, 'OLED', '#6b46c1', '0.96"');
+            ctx.fillStyle = 'white';
+            ctx.font = '9px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText('VCC', 435, 215);
+            ctx.fillText('GND', 435, 230);
+            ctx.fillText('SCL', 435, 245);
+            ctx.fillText('SDA', 435, 260);
+            
+            // Dây OLED đến Arduino
+            drawWire(440, 210, 490, 140, colors.red);
+            drawWire(440, 225, 500, 140, colors.black);
+            drawWire(430, 120, 440, 240, colors.green, 'A5');
+            drawWire(430, 105, 440, 255, colors.green, 'A4');
+            
+            // === Cảm biến chạm ===
+            drawComponent(600, 420, 90, 50, 'Touch', '#f56565', 'Sensor');
+            ctx.fillStyle = 'white';
+            ctx.font = '9px Arial';
+            ctx.fillText('VCC', 605, 435);
+            ctx.fillText('OUT', 605, 450);
+            ctx.fillText('GND', 605, 465);
+            
+            // Dây cảm biến chạm
+            drawWire(550, 55, 620, 430, colors.red);
+            drawWire(550, 120, 620, 445, colors.blue, 'D4');
+            drawWire(550, 70, 620, 460, colors.black);
+            
+            // === L9110S Motor Driver ===
+            drawComponent(220, 200, 100, 80, 'L9110S', '#48bb78', 'Motor Driver');
+            ctx.fillStyle = 'white';
+            ctx.font = '9px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText('VCC', 225, 215);
+            ctx.fillText('GND', 225, 230);
+            ctx.fillText('IA', 225, 245);
+            ctx.fillText('IB', 225, 260);
+            ctx.fillText('OA', 295, 245);
+            ctx.fillText('OB', 295, 260);
+            
+            // Dây L9110S nguồn
+            drawWire(370, 70, 240, 210, colors.red);
+            drawWire(370, 110, 240, 225, colors.black);
+            
+            // Dây L9110S điều khiển
+            drawWire(430, 60, 240, 240, colors.orange, 'D5');
+            drawWire(430, 75, 240, 255, colors.orange, 'D6');
+            
+            // === Motor DC ===
+            drawComponent(220, 320, 80, 60, 'Motor', '#2d3748', 'DC');
+            
+            // Dây Motor
+            drawWire(310, 250, 260, 340, colors.purple);
+            drawWire(310, 265, 260, 360, colors.purple);
+            
+            // Chú thích
+            ctx.fillStyle = '#2d3748';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('🔋 Hệ Thống Nguồn', 145, 270);
+            ctx.fillText('🧠 Vi Điều Khiển', 490, 165);
+            ctx.fillText('📡 Cảm Biến', 650, 500);
+            ctx.fillText('⚙️ Động Cơ', 260, 405);
+            
+            ctx.restore();
+        }
+        
+        function togglePower() {
+            powerOn = !powerOn;
+            drawCircuit();
+        }
+        
+        function zoom(factor) {
+            scale *= factor;
+            scale = Math.max(0.5, Math.min(scale, 3));
+            drawCircuit();
+        }
+        
+        function resetView() {
+            scale = 1;
+            translateX = 0;
+            translateY = 0;
+            drawCircuit();
+        }
+        
+        // Kéo thả canvas
+        canvas.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            startX = e.clientX - translateX;
+            startY = e.clientY - translateY;
+            canvas.style.cursor = 'grabbing';
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            if(isDragging) {
+                translateX = e.clientX - startX;
+                translateY = e.clientY - startY;
+            }
+        });
+        
+        canvas.addEventListener('mouseup', () => {
+            isDragging = false;
+            canvas.style.cursor = 'move';
+        });
+        
+        canvas.addEventListener('mouseleave', () => {
+            isDragging = false;
+            canvas.style.cursor = 'move';
+        });
+        
+        // Zoom bằng chuột
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
+            zoom(zoomFactor);
+        });
+        
+        // Vẽ lần đầu
+        drawCircuit();
+    </script>
+</body>
+</html>
